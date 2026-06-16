@@ -1,5 +1,6 @@
 import {
   Activity,
+  Binary,
   Bot,
   Boxes,
   Braces,
@@ -43,6 +44,7 @@ const MAP: Record<string, ComponentType<IconProps>> = {
   KeyRound,
   ListOrdered,
   Braces,
+  Binary,
   Workflow,
   Radio,
   Search,

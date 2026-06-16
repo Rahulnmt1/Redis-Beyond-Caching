@@ -33,7 +33,7 @@ export function StackConsolidation() {
     <section id="consolidation" className="card scroll-mt-24 p-6 sm:p-7">
       <SectionHeader
         eyebrow="Platform consolidation"
-        title="The consolidation dividend"
+        title="The TCO dividend"
         description="Every system you retire removes licensing, integration glue and an operational failure domain — while teams build against one API and one data model."
       />
 

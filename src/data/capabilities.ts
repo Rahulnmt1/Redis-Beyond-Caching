@@ -9,7 +9,6 @@ export interface CapabilityBlock {
   capabilities: string[]; // key features / commands (for overview)
   personas: PersonaId[];
   lenses: LensId[];
-  inUseToday?: boolean;
   rich?: boolean; // has a full deep-dive page built
 }
 
@@ -37,21 +36,28 @@ export interface DemoCustomer {
 }
 
 /**
- * The capability ecosystem == the Redis data-model toolkit (slide 3).
- * Strings / Hashes are "in use today"; the rest are where the new
- * banking use cases live.
+ * The capability ecosystem — "One engine, many engineering choices".
+ * Data structures (the cache you already run) is the front door; the
+ * specialized models/engines are the new banking use cases.
  */
 export const CAPABILITIES: CapabilityBlock[] = [
   {
-    id: "strings-hashes",
-    name: "Strings / Hashes",
+    id: "data-structures",
+    name: "Data structures",
     icon: "strings",
-    whatItIs: "Key–value & field maps — the cache you already run.",
-    workloads: ["Sessions", "OTP limits", "Balance snapshot"],
-    capabilities: ["GET / SET / EXPIRE", "HSET / HGETALL", "INCR counters", "TTL eviction"],
-    personas: ["Dev", "SRE"],
-    lenses: ["speed", "cost"],
-    inUseToday: true,
+    whatItIs: "20+ native types — pick the right structure for each banking job, on the engine you already run.",
+    workloads: ["Sessions & tokens", "Rate limits & OTP", "Counters & balances", "Queues & leaderboards"],
+    capabilities: [
+      "Strings · INCR / EXPIRE",
+      "Hashes · HSET / HINCRBY",
+      "Lists · LPUSH / BRPOP",
+      "Sets · SADD / SINTER",
+      "Sorted sets · ZADD / ZRANGE",
+      "Bitmaps · BITCOUNT · HLL",
+    ],
+    personas: ["Dev", "SRE", "DB"],
+    lenses: ["speed", "cost", "scale"],
+    rich: true,
   },
   {
     id: "search",
@@ -345,6 +351,218 @@ export const SEARCH_USE_CASES: { title: string; detail: string; primitives: stri
     title: "Searchable notes & RAG",
     detail: "Hybrid vector + filter retrieval grounds GenAI answers on approved bank content.",
     primitives: "Vector · Search",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// DATA STRUCTURES deep-dive  ·  "One engine, many engineering choices"
+// The foundational Redis types (the cache you already run) reframed as the
+// building blocks for real-time banking — mirrors the Search deep-dive shape.
+// ---------------------------------------------------------------------------
+
+export const DS_META = {
+  name: "Data structures",
+  alias: "The data-structure server",
+  icon: "strings",
+  tagline: "One engine, many engineering choices — the right structure for every banking job",
+  whatItIs:
+    "Redis is a data-structure server: strings, hashes, lists, sets, sorted sets, bitmaps, bitfields and HyperLogLog live natively in memory, each with atomic O(1)/O(log N) commands. The cache you already run is the same engine behind sessions, counters, rate limits, queues, leaderboards and real-time analytics — no extra system, no schema migrations.",
+  link: {
+    label: "redis.io · Understand data types",
+    href: "https://redis.io/docs/latest/develop/data-types/",
+  },
+};
+
+/**
+ * Practical banking use cases that map onto the core data structures —
+ * the everyday "beyond caching" workloads banks already have.
+ */
+export const DS_USE_CASES: { title: string; detail: string; primitives: string }[] = [
+  {
+    title: "Session & token store",
+    detail:
+      "Logins, refresh tokens and device sessions held in memory with a TTL — sub-ms on every authenticated call, auto-expiring on logout.",
+    primitives: "String · Hash",
+  },
+  {
+    title: "Rate limiting & OTP throttling",
+    detail:
+      "Atomic counters cap OTP sends, login attempts and API calls per window — abuse is blocked at the edge without touching the core.",
+    primitives: "String · Sorted set",
+  },
+  {
+    title: "Idempotency & dedupe",
+    detail:
+      "A SET NX key or a set of processed ids makes a UPI / NEFT request exactly-once, even when clients retry.",
+    primitives: "String · Set",
+  },
+  {
+    title: "Real-time counters & balances",
+    detail:
+      "Running totals, available-balance snapshots and exposure tallies updated atomically — no read-modify-write race.",
+    primitives: "String · Hash",
+  },
+  {
+    title: "Queues & work pipelines",
+    detail:
+      "Payment, notification and onboarding steps buffered as lists with blocking pop — smooth back-pressure under burst load.",
+    primitives: "List",
+  },
+  {
+    title: "Leaderboards & risk ranking",
+    detail:
+      "Score-ranked sorted sets drive AML risk ranking, collections priority and rewards tiers — top-N in O(log N).",
+    primitives: "Sorted set",
+  },
+  {
+    title: "Unique cardinality at scale",
+    detail:
+      "Count unique payers, devices or daily-active users across millions of events in a fixed 12 KB per metric.",
+    primitives: "HyperLogLog",
+  },
+  {
+    title: "Activity flags & cohorts",
+    detail:
+      "One bit per customer per day tracks active users, feature rollouts and consent flags in kilobytes, not tables.",
+    primitives: "Bitmap",
+  },
+];
+
+/**
+ * The core data structures, each with a banking worked example.
+ * Re-uses the SearchFeature shape: `query` here holds the command(s).
+ */
+export const DS_FEATURES: SearchFeature[] = [
+  {
+    id: "strings",
+    name: "Strings & atomic counters",
+    icon: "strings",
+    what: "Binary-safe values up to 512 MB with atomic INCR / DECR / INCRBYFLOAT and per-key TTL — the simplest type and the backbone of caching, counters and rate limits.",
+    usecase:
+      "OTP / login throttling and cached balances — cap attempts per window and serve the latest balance in sub-ms, auto-expiring keys with EX.",
+    pattern: `otp:99900...:count → "2"        (TTL 300s)
+acct:C1001:bal      → "2480000"  (TTL 30s)`,
+    query: `INCR   otp:99900...:count
+EXPIRE otp:99900...:count 300
+SET    acct:C1001:bal 2480000 EX 30`,
+    output:
+      "count → 3 on the next send; a 4th within 5 min is blocked. Balance served from memory, refreshed every 30 s — no core hit.",
+    outcome:
+      "Throttling and hot reads handled atomically in one in-memory op — no race conditions, no round-trip to the system of record.",
+    without:
+      "A SELECT … FOR UPDATE read-modify-write on the RDBMS per attempt — slow, lock-heavy and racy under burst traffic.",
+  },
+  {
+    id: "hashes",
+    name: "Hashes — object & field maps",
+    icon: "Braces",
+    what: "Store an object as a map of fields under one key and read or update a single field atomically (HGET / HSET / HINCRBY) — no fetch-and-rewrite of the whole record.",
+    usecase:
+      "Session & account-state records — keep customer id, role, last-seen and a running counter together, updating one field without touching the rest.",
+    pattern: `sess:ab12cd → { custId:"C1001", role:"priority",
+              lastSeen:1718…, hits:7 }`,
+    query: `HSET    sess:ab12cd custId C1001 role priority
+HINCRBY sess:ab12cd hits 1
+HGETALL sess:ab12cd`,
+    output:
+      "hits increments to 8 atomically; HGETALL returns the full session map in one sub-ms call.",
+    outcome:
+      "One key models a whole object with atomic per-field updates — memory-efficient and far fewer round trips than a column-per-call.",
+    without:
+      "Either many flat key:field strings to juggle, or serialise a blob and rewrite it whole on every change (lost-update races).",
+  },
+  {
+    id: "lists",
+    name: "Lists — queues & feeds",
+    icon: "ListOrdered",
+    what: "Ordered sequences with push/pop at either end (LPUSH / RPOP) and blocking variants (BRPOP) — a ready-made in-memory queue, stack or recent-activity feed.",
+    usecase:
+      "Payment / notification work queue — producers LPUSH jobs, workers BRPOP them in order, absorbing bursts without dropping work.",
+    pattern: `q:payments → [ "txn:88123", "txn:88124", "txn:88125" ]`,
+    query: `LPUSH  q:payments txn:88126
+BRPOP  q:payments 5
+LRANGE q:payments 0 4`,
+    output:
+      "Worker pops txn:88123 (FIFO) within ms; LRANGE shows the latest 5 queued jobs for monitoring.",
+    outcome:
+      "A durable, ordered work buffer with built-in back-pressure — no broker to stand up for a simple pipeline.",
+    without:
+      "Poll a DB table as a queue (hot-row contention, SKIP LOCKED gymnastics) or run a separate broker for a basic pipeline.",
+  },
+  {
+    id: "sets",
+    name: "Sets — uniqueness & membership",
+    icon: "Boxes",
+    what: "Unordered collections of unique members with O(1) add / membership test (SADD / SISMEMBER) and set algebra (SINTER / SUNION / SDIFF) across keys.",
+    usecase:
+      "Idempotency & entitlements — record processed transaction ids to drop duplicates, and intersect product-holding sets to target cross-sell.",
+    pattern: `txn:processed       → { 88123, 88124 }
+holders:demat / :nri → { C1001, C1006, … }`,
+    query: `SADD       txn:processed 88124   # → 0 (already seen)
+SISMEMBER  txn:processed 88124   # → 1
+SINTERCARD 2 holders:demat holders:nri`,
+    output:
+      "Duplicate txn 88124 is rejected (SADD returns 0); SINTERCARD counts customers holding both Demat and NRI accounts instantly.",
+    outcome:
+      "Exactly-once handling and audience overlaps resolved in-memory with set math — no GROUP BY / DISTINCT scans.",
+    without:
+      "UNIQUE constraints + INSERT … ON CONFLICT for dedupe and multi-join DISTINCT queries for overlaps — both scale poorly.",
+  },
+  {
+    id: "sortedsets",
+    name: "Sorted sets — ranking & windows",
+    icon: "leaderboards",
+    what: "Every member carries a score and the set stays ordered for range, rank and top-N queries (ZADD / ZRANGEBYSCORE / ZREVRANGE) in O(log N) — also the perfect sliding-time-window structure.",
+    usecase:
+      "Transaction-velocity rate limiting & AML risk ranking — score by timestamp for a rolling window, or by risk to pull the riskiest customers.",
+    pattern: `vel:C1001 → { txn@1718000001, txn@1718000042 }  (score = epoch)
+aml:risk  → { C1005:73, C1011:68, C1003:61 }`,
+    query: `ZADD             vel:C1001 1718000060 txn:88126
+ZREMRANGEBYSCORE vel:C1001 -inf (1718000000  # drop >60s old
+ZCARD            vel:C1001                    # txns in window
+ZREVRANGE        aml:risk 0 2 WITHSCORES`,
+    output:
+      "The velocity window holds only the last 60 s → trip a rule if ZCARD > N; the risk board returns the top-3 customers by score in O(log N).",
+    outcome:
+      "Rolling-window rate limits and live rankings from one structure — no batch recompute, no sort on read.",
+    without:
+      "Windowed SQL (timestamp BETWEEN … + COUNT) or ORDER BY … LIMIT on a growing table — recomputed on every check.",
+  },
+  {
+    id: "bitmaps",
+    name: "Bitmaps & bitfields — flags at scale",
+    icon: "Binary",
+    what: "Treat a string as a bit array: SETBIT / GETBIT / BITCOUNT track one bit per entity, and BITFIELD packs many small counters into one key — millions of flags in kilobytes.",
+    usecase:
+      "Daily-active tracking & feature rollout — one bit per customer per day answers ‘how many active today?’ and ‘is this customer in the cohort?’.",
+    pattern: `dau:2026-06-16 → 1·0·1·1·0·…   (bit index = customer #)`,
+    query: `SETBIT   dau:2026-06-16 1001 1
+BITCOUNT dau:2026-06-16
+GETBIT   dau:2026-06-16 1001`,
+    output:
+      "BITCOUNT returns active-users-today across millions of customers in ~1 ms; GETBIT confirms one customer. ~1.2 MB holds 10 M flags.",
+    outcome:
+      "Population-scale presence analytics and cohort flags at a tiny, fixed memory cost — countable and combinable with AND / OR / XOR.",
+    without:
+      "A row (or table) per user-per-day and COUNT(DISTINCT) scans — orders of magnitude more storage and far slower to aggregate.",
+  },
+  {
+    id: "hll",
+    name: "HyperLogLog — unique counts",
+    icon: "probabilistic",
+    what: "A probabilistic cardinality sketch: PFADD / PFCOUNT estimate the number of unique items within ~0.81% error using a fixed 12 KB — no matter how many billions you add.",
+    usecase:
+      "Unique payers, devices and daily-active users — count distinct entities across huge event streams without storing every id.",
+    pattern: `uniq:payers:2026-06-16 → HLL sketch (≤ 12 KB)`,
+    query: `PFADD   uniq:payers:2026-06-16 C1001 C1006 C1001
+PFCOUNT uniq:payers:2026-06-16
+PFMERGE uniq:payers:wk uniq:payers:2026-06-16 …`,
+    output:
+      "Duplicate C1001 counts once; PFCOUNT ≈ unique payers today; PFMERGE rolls daily sketches into a weekly unique count — 12 KB each.",
+    outcome:
+      "Billions of uniques counted in constant 12 KB memory — dashboards that would be impossible to keep exact, served instantly.",
+    without:
+      "A growing set of every id (gigabytes) or COUNT(DISTINCT) over the warehouse — heavy memory and slow, batch-only answers.",
   },
 ];
 

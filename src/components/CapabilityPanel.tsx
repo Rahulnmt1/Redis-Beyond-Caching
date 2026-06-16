@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight, Hammer } from "lucide-react";
 import type { CapabilityBlock } from "@/data/capabilities";
 import { PillarIcon } from "./icons";
+import { DataStructuresHub } from "./DataStructuresHub";
 import { SearchDeepDive } from "./SearchDeepDive";
 import { ChipRow, SectionLabel } from "./ui";
 
@@ -15,6 +16,10 @@ export function CapabilityPanel({
 }) {
   if (cap.rich && cap.id === "search") {
     return <SearchDeepDive onBack={onBack} />;
+  }
+
+  if (cap.rich && cap.id === "data-structures") {
+    return <DataStructuresHub onBack={onBack} />;
   }
 
   return (
@@ -43,11 +48,6 @@ export function CapabilityPanel({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-3xl font-bold tracking-tight text-fg">{cap.name}</h1>
-              {cap.inUseToday && (
-                <span className="chip !border-line2 !bg-midnight !text-muted">
-                  In use today
-                </span>
-              )}
             </div>
             <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">
               {cap.whatItIs}
@@ -76,18 +76,20 @@ export function CapabilityPanel({
             <div className="font-semibold text-fg">Interactive deep-dive in progress</div>
             <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted">
               We&apos;re detailing every block with features, runnable banking demos
-              and diagrams — built out one at a time. <strong className="text-fg/90">Search &amp; query</strong> is
-              the first fully-built example.
+              and diagrams — built out one at a time. <strong className="text-fg/90">Data structures</strong> and{" "}
+              <strong className="text-fg/90">Search &amp; query</strong> are fully built — start there.
             </p>
           </div>
         </div>
-        <button
-          onClick={() => onSelect("search")}
-          className="btn btn-primary !py-2 shrink-0"
-        >
-          See the Search deep-dive
-          <ArrowRight className="h-4 w-4" />
-        </button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button onClick={() => onSelect("data-structures")} className="btn btn-primary !py-2">
+            Data structures
+            <ArrowRight className="h-4 w-4" />
+          </button>
+          <button onClick={() => onSelect("search")} className="btn btn-ghost !py-2">
+            Search &amp; query
+          </button>
+        </div>
       </div>
     </div>
   );

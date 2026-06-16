@@ -23,7 +23,12 @@ export interface Lens {
 export interface MaturityStage {
   stage: string;
   label: string;
-  note: string;
+  icon: string;
+  tone: "redis" | "mid" | "yellow";
+  headline: string;
+  detail: string;
+  chips: string[];
+  flag?: string;
 }
 
 export interface Metric {

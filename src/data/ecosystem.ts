@@ -41,11 +41,53 @@ export const LENSES: Lens[] = [
 ];
 
 export const MATURITY: MaturityStage[] = [
-  { stage: "L0", label: "Cache-aside", note: "Where most banks are" },
-  { stage: "L1", label: "Multi-model", note: "Retire point solutions" },
-  { stage: "L2", label: "Real-time platform", note: "Streams + RDI" },
-  { stage: "L3", label: "AI-native", note: "Vectors, agents & Iris" },
-  { stage: "L4", label: "Globally resilient", note: "Active-Active + DR" },
+  {
+    stage: "L0",
+    label: "Cache-aside",
+    icon: "Gauge",
+    tone: "redis",
+    flag: "You are here",
+    headline: "Speed up reads",
+    detail: "Cache in front of the core DB; sessions & tokens.",
+    chips: ["Cache", "Sessions"],
+  },
+  {
+    stage: "L1",
+    label: "Multi-model",
+    icon: "Layers",
+    tone: "mid",
+    headline: "Retire point solutions",
+    detail: "JSON, Search & Time Series on the same engine.",
+    chips: ["JSON", "Search", "TS"],
+  },
+  {
+    stage: "L2",
+    label: "Real-time platform",
+    icon: "Activity",
+    tone: "mid",
+    headline: "Go event-driven",
+    detail: "Streams for payments + RDI sync from the core.",
+    chips: ["Streams", "RDI"],
+  },
+  {
+    stage: "L3",
+    label: "AI-native",
+    icon: "Sparkles",
+    tone: "mid",
+    headline: "Vectors & agents",
+    detail: "Vector search, feature store & Redis Iris.",
+    chips: ["Vectors", "Iris"],
+  },
+  {
+    stage: "L4",
+    label: "Globally resilient",
+    icon: "Globe",
+    tone: "yellow",
+    flag: "Destination",
+    headline: "Always-on",
+    detail: "Active-Active multi-region + DR, K8s-native.",
+    chips: ["Active-Active", "DR"],
+  },
 ];
 
 export const PILLARS: Pillar[] = [

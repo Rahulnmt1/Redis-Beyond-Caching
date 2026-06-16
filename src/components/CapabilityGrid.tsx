@@ -30,20 +30,10 @@ export function CapabilityGrid({ capabilities, persona, lens, onSelect }: Props)
           <button
             key={c.id}
             onClick={() => onSelect(c.id)}
-            style={c.inUseToday ? { background: "#0C2530" } : undefined}
             className={`tile tile-hover group relative flex flex-col p-4 text-left ${
               hot ? "!border-redis/55 shadow-glow" : ""
             } ${dim ? "opacity-45" : ""}`}
           >
-            {/* top-right tag */}
-            <div className="absolute right-3 top-3 flex items-center gap-1.5">
-              {c.inUseToday && (
-                <span className="rounded-full bg-redis px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
-                  In use today
-                </span>
-              )}
-            </div>
-
             <div className="flex items-center gap-3 pr-20">
               <span
                 className={`flex h-11 w-11 flex-none items-center justify-center rounded-xl border transition-colors ${
