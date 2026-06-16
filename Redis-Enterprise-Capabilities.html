@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redis Enterprise — Features &amp; Capabilities (canvas export)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --dusk: #163341;
+        --midnight: #091a23;
+        --surface: #1c3e4b;
+        --surface2: #244a58;
+        --surface3: #2c5563;
+        --line: rgba(255, 255, 255, 0.1);
+        --line2: rgba(255, 255, 255, 0.17);
+        --white: #ffffff;
+        --muted: #b9c2c6;
+        --faint: #8598a0;
+        --hyper: #ff4438;
+        --hyper-soft: #ff877e;
+        --yellow: #dcff1e;
+        --sky: #80dbff;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif;
+        color: var(--white);
+        background-color: var(--dusk);
+        background-image: radial-gradient(980px 560px at 90% -10%, rgba(255, 68, 56, 0.18), transparent 60%),
+          radial-gradient(820px 560px at 0% 112%, rgba(220, 255, 30, 0.1), transparent 58%),
+          radial-gradient(720px 520px at 100% 108%, rgba(128, 219, 255, 0.07), transparent 60%),
+          linear-gradient(180deg, #163341 0%, #0f2a34 52%, #091a23 100%);
+        background-attachment: fixed;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.5;
+      }
+      a { color: var(--hyper-soft); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: rgba(22, 51, 65, 0.75);
+        backdrop-filter: blur(10px);
+        position: sticky; top: 0; z-index: 10;
+      }
+      .bar { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
+      .brand {
+        width: 36px; height: 36px; border-radius: 11px; flex: none;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: linear-gradient(140deg, #ff5247, #d93a2f);
+        box-shadow: 0 6px 20px -6px rgba(255, 68, 56, 0.6);
+      }
+      .brand-title { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 9px; }
+      .sub { font-size: 12px; color: var(--hyper); font-weight: 600; }
+      .spacer { margin-left: auto; }
+      .src { font-size: 12px; color: var(--faint); }
+      .pill {
+        display: inline-flex; align-items: center; border-radius: 999px;
+        padding: 3px 10px; font-size: 11px; font-weight: 600;
+        border: 1px solid var(--line2); background: var(--surface2); color: var(--muted);
+      }
+      .pill-yellow { background: var(--yellow); color: var(--midnight); border-color: transparent; font-weight: 700; }
+
+      .hero { padding: 44px 0 8px; }
+      h1 { font-size: 34px; line-height: 1.12; letter-spacing: -0.02em; font-weight: 800; margin: 0; max-width: 800px; }
+      .lead { margin-top: 16px; max-width: 760px; color: var(--muted); font-size: 15px; }
+      .lead b { color: var(--white); }
+      .src-line { margin-top: 10px; font-size: 12px; color: var(--faint); }
+
+      section { padding: 22px 0; }
+      h2 { font-size: 21px; letter-spacing: -0.01em; margin: 0 0 14px; font-weight: 700; }
+      .divider { height: 1px; background: var(--line); margin: 6px 0; }
+
+      .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .stat { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 16px; }
+      .stat .v { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; }
+      .stat .v.success { color: var(--yellow); }
+      .stat .l { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+      .models { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .model { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 16px; }
+      .model .mh { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .model .mn { font-weight: 700; font-size: 15px; }
+      .model .mb { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+      table.tbl { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+      table.tbl th { text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); font-weight: 700; padding: 11px 14px; background: rgba(9, 26, 35, 0.5); border-bottom: 1px solid var(--line); }
+      table.tbl td { padding: 11px 14px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); vertical-align: top; }
+      table.tbl tr:last-child td { border-bottom: none; }
+      table.tbl td.name, table.tbl td .nm { color: var(--white); font-weight: 600; }
+      table.tbl td.ent { color: var(--white); font-weight: 500; }
+      table.tbl td.dash { color: var(--faint); }
+
+      .callout { border: 1px solid rgba(128, 219, 255, 0.3); background: rgba(128, 219, 255, 0.07); border-radius: 12px; padding: 14px 16px; }
+      .callout .ct { font-weight: 700; font-size: 13.5px; color: var(--sky); margin-bottom: 6px; }
+      .callout .cb { font-size: 13.5px; color: var(--muted); }
+      .bullets { margin-top: 12px; display: flex; flex-direction: column; gap: 9px; }
+      .bullet { display: flex; gap: 10px; align-items: flex-start; }
+      .bullet .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--hyper); margin-top: 8px; flex: none; }
+      .bullet .bt { font-size: 13.5px; color: var(--muted); }
+      .bullet .bt b { color: var(--white); }
+
+      .eco { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .ecocard { border: 1px solid var(--line); background: var(--surface); border-radius: 16px; padding: 16px; }
+      .ecocard .eh { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+
+      .devgroup { margin-bottom: 14px; }
+      .devgroup h3 { font-size: 13.5px; margin: 0 0 8px; font-weight: 700; }
+      .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+      .chip { border: 1px solid var(--line2); background: var(--surface2); color: var(--muted); border-radius: 999px; padding: 4px 10px; font-size: 11.5px; font-weight: 500; }
+
+      footer { border-top: 1px solid var(--line); margin-top: 24px; }
+      .foot { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding: 22px 0 40px; font-size: 12px; color: var(--faint); }
+
+      @media (max-width: 820px) {
+        h1 { font-size: 28px; }
+        .stats, .models, .eco { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 560px) {
+        .stats, .models, .eco { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap bar">
+        <span class="brand" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" /><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" /></svg>
+        </span>
+        <div>
+          <div class="brand-title">Redis <span class="pill pill-yellow">Enterprise</span></div>
+          <div class="sub">Features &amp; capabilities</div>
+        </div>
+        <span class="spacer"></span>
+        <span class="src">Canvas export · Redis Enterprise Capabilities</span>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <section class="hero">
+        <h1>Redis Enterprise — Features &amp; Capabilities</h1>
+        <p class="lead">
+          The enterprise-grade Redis platform. In the official docs it appears as
+          <b>Redis Software</b> for self-managed on-premises (or your-own-cloud)
+          deployments, while <b>Redis Cloud</b> and <b>Redis for Kubernetes</b>
+          are enterprise by default and inherit every Redis Software capability.
+        </p>
+        <div class="src-line">
+          Source:
+          <a href="https://redis.io/docs/latest/operate/" target="_blank" rel="noreferrer">redis.io/docs — Operate</a>
+          · compiled Jun 2026
+        </div>
+      </section>
+
+      <section>
+        <div class="stats">
+          <div class="stat"><div class="v">3</div><div class="l">Enterprise deployment models</div></div>
+          <div class="stat"><div class="v">&lt;1 ms</div><div class="l">Active-Active geo latency</div></div>
+          <div class="stat"><div class="v success">99.999%</div><div class="l">Uptime SLA</div></div>
+          <div class="stat"><div class="v">24/7</div><div class="l">Monitoring &amp; support</div></div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <section>
+        <h2>Deployment models</h2>
+        <div class="models">
+          <div class="model">
+            <div class="mh"><span class="mn">Redis Software</span><span class="pill">Self-managed</span></div>
+            <div class="mb">Enterprise-grade Redis you run in your own data center or cloud account. Linear scalability, HA, backups &amp; recovery, predictable performance, and 24/7 support.</div>
+          </div>
+          <div class="model">
+            <div class="mh"><span class="mn">Redis Cloud</span><span class="pill">Fully managed</span></div>
+            <div class="mb">Database-as-a-service on AWS, Google Cloud &amp; Azure. Enterprise by default — all Redis Software features plus instant failover, automated ops, and 24/7 monitoring.</div>
+          </div>
+          <div class="model">
+            <div class="mh"><span class="mn">Redis for Kubernetes</span><span class="pill">Operator</span></div>
+            <div class="mb">The Redis Enterprise operator brings every Software capability to any CNCF-conformant cluster via CRDs (REC/REDB) and GitOps-friendly, Kubernetes-native workflows.</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Scalability &amp; performance</h2>
+        <table class="tbl">
+          <thead><tr><th>Capability</th><th>What it provides</th></tr></thead>
+          <tbody>
+            <tr><td class="name">Linear scalability</td><td>Add nodes and shards to grow throughput and capacity predictably.</td></tr>
+            <tr><td class="name">Clustering / sharding</td><td>Split a database into shards spread across nodes so no single node is a bottleneck or point of failure.</td></tr>
+            <tr><td class="name">Multiple active proxies</td><td>Several proxy endpoints per database for higher connection and request throughput.</td></tr>
+            <tr><td class="name">OSS Cluster API</td><td>Cluster-aware clients shard requests for lower latency at scale.</td></tr>
+            <tr><td class="name">Redis Flex / Auto Tiering</td><td>Extend datasets across DRAM + SSD using the Speedb engine to cut infra cost — up to 10k ops/sec per core.</td></tr>
+            <tr><td class="name">Predictable performance</td><td>Consistent sub-millisecond latency under heavy, real-time workloads.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>High availability &amp; durability</h2>
+        <table class="tbl">
+          <thead><tr><th>Capability</th><th>What it provides</th></tr></thead>
+          <tbody>
+            <tr><td class="name">Replication &amp; auto-failover</td><td>Each primary shard is copied to a replica; a replica is automatically promoted if a primary fails.</td></tr>
+            <tr><td class="name">Replica HA</td><td>Automatically migrates replica shards to other nodes so copies are never co-located.</td></tr>
+            <tr><td class="name">Database persistence</td><td>RDB snapshots and AOF written to disk for durability against process or server failures.</td></tr>
+            <tr><td class="name">Rack-zone awareness</td><td>Places primary and replica shards in different racks/zones to survive a rack or zone outage.</td></tr>
+            <tr><td class="name">Backups</td><td>Scheduled backups to external storage for point-in-time protection.</td></tr>
+            <tr><td class="name">Cluster recovery</td><td>Recover an entire cluster and its databases after an outage.</td></tr>
+            <tr><td class="name">Rolling upgrades</td><td>Upgrade Redis and cluster versions with zero downtime.</td></tr>
+            <tr><td class="name">Discovery service</td><td>Redis Sentinel-compatible endpoint discovery for connection management.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Active-Active geo-distribution</h2>
+        <div class="callout">
+          <div class="ct">Multi-primary, conflict-free, globally distributed</div>
+          <div class="cb">Built on conflict-free replicated data types (CRDTs). Applications read and write the same dataset from any region with local, sub-millisecond latency — and keep working even if an entire cluster goes offline.</div>
+        </div>
+        <div class="bullets">
+          <div class="bullet"><span class="dot"></span><div class="bt"><b>Multi-primary replication</b> — Every participating cluster hosts a writable primary; connect to the closest region for near-local latency.</div></div>
+          <div class="bullet"><span class="dot"></span><div class="bt"><b>Automatic conflict resolution</b> — CRDTs resolve concurrent writes deterministically with no application-side logic.</div></div>
+          <div class="bullet"><span class="dot"></span><div class="bt"><b>Strong eventual consistency</b> — Vector clocks converge replicas to one state; optional causal consistency preserves operation order.</div></div>
+          <div class="bullet"><span class="dot"></span><div class="bt"><b>Syncer</b> — Keeps a replication backlog and uses partial syncs (or a full sync on loss) to keep clusters consistent.</div></div>
+          <div class="bullet"><span class="dot"></span><div class="bt"><b>Disaster recovery</b> — Geo-redundancy provides built-in DR and accelerated read access for distributed users.</div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Security &amp; compliance</h2>
+        <table class="tbl">
+          <thead><tr><th>Capability</th><th>What it provides</th></tr></thead>
+          <tbody>
+            <tr><td class="name">Transport Layer Security (TLS)</td><td>Encrypts traffic between clients and the cluster.</td></tr>
+            <tr><td class="name">Role-based access control (RBAC)</td><td>Fine-grained users, roles, and permissions for cluster and database access.</td></tr>
+            <tr><td class="name">LDAP authentication</td><td>Integrate access control with enterprise directory services.</td></tr>
+            <tr><td class="name">SSO / SAML, MFA, social login</td><td>Single sign-on, multi-factor auth, and social login for the Redis Cloud console.</td></tr>
+            <tr><td class="name">Certificates</td><td>Self-signed and custom certificate management for nodes and databases.</td></tr>
+            <tr><td class="name">Internode &amp; at-rest encryption</td><td>Encrypt traffic between cluster nodes and data stored on disk.</td></tr>
+            <tr><td class="name">Audit events</td><td>Auditing of connection and data-access events for compliance.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Operational ecosystem</h2>
+        <div class="eco">
+          <div class="ecocard">
+            <div class="eh">Observability</div>
+            <div class="bullets">
+              <div class="bullet"><span class="dot"></span><div class="bt">Performance monitoring &amp; key metrics</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">Export metrics to Prometheus &amp; Grafana</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">Redis Insight GUI analysis</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">Datadog, Dynatrace &amp; New Relic integrations</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">System logs, SLOWLOG, keyspace notifications</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">Configurable alerts &amp; events</div></div>
+            </div>
+          </div>
+          <div class="ecocard">
+            <div class="eh">Management &amp; tooling</div>
+            <div class="bullets">
+              <div class="bullet"><span class="dot"></span><div class="bt">Web-based admin console</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">REST API for clusters &amp; databases</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">rladmin, crdb-cli &amp; CLI utilities</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">24/7 enterprise support &amp; support packages</div></div>
+            </div>
+          </div>
+          <div class="ecocard">
+            <div class="eh">Data integration (RDI &amp; RIOT)</div>
+            <div class="bullets">
+              <div class="bullet"><span class="dot"></span><div class="bt">Redis Data Integration (RDI) — near-real-time CDC from core banking DBs (Oracle, Db2, Postgres, SQL Server)</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">Keeps Redis in sync with the system of record (read-through / write-behind)</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">RIOT (Redis Input/Output Tools) — bulk import/export, live replication, data generation</div></div>
+              <div class="bullet"><span class="dot"></span><div class="bt">Guided migration from ElastiCache, Memorystore &amp; open-source Redis</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Developer data platform</h2>
+        <p class="lead" style="margin-top: 0">
+          Enterprise deployments ship the full Redis and Redis Stack surface — one
+          engine for caching, primary database, search, vectors, and streaming.
+        </p>
+        <div style="margin-top: 14px">
+          <div class="devgroup">
+            <h3>Core data structures</h3>
+            <div class="chips"><span class="chip">Strings</span><span class="chip">Hashes</span><span class="chip">Lists</span><span class="chip">Sets</span><span class="chip">Sorted Sets</span><span class="chip">Streams</span><span class="chip">Pub/Sub</span><span class="chip">Bitmaps</span><span class="chip">Geospatial</span><span class="chip">Bitfields</span></div>
+          </div>
+          <div class="devgroup">
+            <h3>Search &amp; specialized models</h3>
+            <div class="chips"><span class="chip">Redis Query Engine</span><span class="chip">Vector search</span><span class="chip">JSON</span><span class="chip">Probabilistic structures</span><span class="chip">Time series</span></div>
+          </div>
+          <div class="devgroup">
+            <h3>AI &amp; retrieval</h3>
+            <div class="chips"><span class="chip">Vector database</span><span class="chip">RAG</span><span class="chip">Semantic caching / LangCache</span><span class="chip">RedisVL</span></div>
+          </div>
+          <div class="devgroup">
+            <h3>Programmability</h3>
+            <div class="chips"><span class="chip">Lua scripts</span><span class="chip">Functions</span><span class="chip">Transactions</span><span class="chip">Full OSS API compatibility</span></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <section>
+        <h2>What Redis Enterprise adds over Open Source</h2>
+        <table class="tbl">
+          <thead><tr><th>Capability</th><th>Redis Open Source</th><th>Redis Enterprise</th></tr></thead>
+          <tbody>
+            <tr><td class="name">Clustering</td><td>Manual (Redis Cluster)</td><td class="ent">Managed, auto-balanced sharding</td></tr>
+            <tr><td class="name">Failover</td><td>Manual / Sentinel</td><td class="ent">Automatic failover + replica HA</td></tr>
+            <tr><td class="name">Active-Active geo</td><td class="dash">—</td><td class="ent">CRDT multi-primary, &lt;1 ms</td></tr>
+            <tr><td class="name">Auto-tiering (RAM+SSD)</td><td class="dash">—</td><td class="ent">Redis Flex (Speedb engine)</td></tr>
+            <tr><td class="name">Rolling upgrades</td><td class="dash">—</td><td class="ent">Zero-downtime</td></tr>
+            <tr><td class="name">Backups &amp; recovery</td><td>Persistence only</td><td class="ent">Scheduled backups + cluster recovery</td></tr>
+            <tr><td class="name">Access control</td><td>ACL</td><td class="ent">RBAC + users/roles</td></tr>
+            <tr><td class="name">Directory / SSO</td><td class="dash">—</td><td class="ent">LDAP; SAML SSO + MFA (Cloud)</td></tr>
+            <tr><td class="name">Encryption</td><td>TLS</td><td class="ent">TLS + internode + at-rest</td></tr>
+            <tr><td class="name">Auditing</td><td>Keyspace notifications</td><td class="ent">Audit events</td></tr>
+            <tr><td class="name">Monitoring</td><td>INFO / SLOWLOG</td><td class="ent">Metrics + Prometheus/Grafana + APM</td></tr>
+            <tr><td class="name">Support</td><td>Community</td><td class="ent">24/7 enterprise support</td></tr>
+          </tbody>
+        </table>
+        <div class="src-line">Enterprise capabilities are available across Redis Software, Redis Cloud, and Redis for Kubernetes.</div>
+      </section>
+    </div>
+
+    <footer>
+      <div class="wrap foot">
+        <span>Redis Enterprise — Features &amp; Capabilities · faithful export of the Cursor canvas</span>
+        <a href="https://redis.io/docs/latest/operate/" target="_blank" rel="noreferrer">redis.io/docs — Operate</a>
+      </div>
+    </footer>
+  </body>
+</html>

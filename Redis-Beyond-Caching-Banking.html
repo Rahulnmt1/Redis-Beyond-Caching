@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redis — Beyond Caching for Banking (canvas export)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --dusk: #163341;
+        --midnight: #091a23;
+        --surface: #1c3e4b;
+        --surface2: #244a58;
+        --surface3: #2c5563;
+        --line: rgba(255, 255, 255, 0.1);
+        --line2: rgba(255, 255, 255, 0.17);
+        --white: #ffffff;
+        --muted: #b9c2c6;
+        --faint: #8598a0;
+        --hyper: #ff4438;
+        --hyper-soft: #ff877e;
+        --yellow: #dcff1e;
+        --sky: #80dbff;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif;
+        color: var(--white);
+        background-color: var(--dusk);
+        background-image: radial-gradient(980px 560px at 90% -10%, rgba(255, 68, 56, 0.18), transparent 60%),
+          radial-gradient(820px 560px at 0% 112%, rgba(220, 255, 30, 0.1), transparent 58%),
+          radial-gradient(720px 520px at 100% 108%, rgba(128, 219, 255, 0.07), transparent 60%),
+          linear-gradient(180deg, #163341 0%, #0f2a34 52%, #091a23 100%);
+        background-attachment: fixed;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.5;
+      }
+      a { color: var(--hyper-soft); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: rgba(22, 51, 65, 0.75);
+        backdrop-filter: blur(10px);
+        position: sticky; top: 0; z-index: 10;
+      }
+      .bar { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
+      .brand {
+        width: 36px; height: 36px; border-radius: 11px; flex: none;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: linear-gradient(140deg, #ff5247, #d93a2f);
+        box-shadow: 0 6px 20px -6px rgba(255, 68, 56, 0.6);
+      }
+      .brand-title { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 9px; }
+      .sub { font-size: 12px; color: var(--hyper); font-weight: 600; }
+      .spacer { margin-left: auto; }
+      .src { font-size: 12px; color: var(--faint); }
+      .pill {
+        display: inline-flex; align-items: center; border-radius: 999px;
+        padding: 3px 10px; font-size: 11px; font-weight: 600;
+        border: 1px solid var(--line2); background: var(--surface2); color: var(--muted);
+      }
+      .pill-yellow { background: var(--yellow); color: var(--midnight); border-color: transparent; font-weight: 700; }
+      .pill-active { background: var(--hyper); color: #fff; border-color: transparent; }
+
+      .hero { padding: 46px 0 8px; }
+      .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); margin-bottom: 14px; }
+      h1 { font-size: 38px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 800; margin: 0; max-width: 780px; }
+      h1 .accent { color: var(--hyper); }
+      .lead { margin-top: 16px; max-width: 720px; color: var(--muted); font-size: 15.5px; }
+
+      section { padding: 26px 0; }
+      .seclabel { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin-bottom: 10px; }
+      h2 { font-size: 22px; letter-spacing: -0.01em; margin: 0 0 14px; font-weight: 700; }
+
+      .maturity { display: flex; flex-wrap: wrap; gap: 10px; }
+      .mstage { flex: 1 1 150px; border: 1px solid var(--line); background: rgba(36, 74, 88, 0.5); border-radius: 14px; padding: 12px 14px; }
+      .mstage .lvl { font-size: 10px; letter-spacing: 0.18em; font-weight: 700; color: var(--yellow); }
+      .mstage .ttl { font-weight: 700; font-size: 14px; margin-top: 2px; }
+      .mstage .note { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+      .personas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+      .persona { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 14px; }
+      .persona .pn { font-weight: 700; font-size: 13.5px; }
+      .persona .pb { font-size: 12px; color: var(--muted); margin-top: 5px; }
+      .lenses { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+      .pillar { border: 1px solid var(--line); background: var(--surface); border-radius: 18px; padding: 22px; margin-bottom: 16px; box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.75); }
+      .pillar-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+      .pillar-h h3 { margin: 0; font-size: 18px; font-weight: 700; }
+      .pillar-h .tl { color: var(--muted); font-size: 13.5px; }
+      .callout { margin: 14px 0 0; border: 1px solid rgba(128, 219, 255, 0.3); background: rgba(128, 219, 255, 0.07); border-radius: 12px; padding: 12px 14px; font-size: 13.5px; color: var(--muted); }
+      .callout b { color: var(--white); }
+      .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+      .mini-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-bottom: 7px; }
+      .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+      .chip { border: 1px solid var(--line2); background: var(--surface2); color: var(--muted); border-radius: 999px; padding: 4px 10px; font-size: 11.5px; font-weight: 500; }
+      .chip.cap { border-color: rgba(255, 68, 56, 0.4); background: rgba(255, 68, 56, 0.12); color: var(--hyper-soft); }
+
+      .ucs { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+      details.uc { border: 1px solid var(--line); background: rgba(9, 26, 35, 0.4); border-radius: 12px; overflow: hidden; }
+      details.uc > summary { list-style: none; cursor: pointer; padding: 13px 16px; display: flex; align-items: center; gap: 10px; }
+      details.uc > summary::-webkit-details-marker { display: none; }
+      .uc-name { font-weight: 600; font-size: 14px; }
+      .uc-caret { margin-left: auto; color: var(--faint); font-size: 12px; transition: transform 0.2s; }
+      details.uc[open] .uc-caret { transform: rotate(90deg); }
+      .uc-body { padding: 4px 16px 18px; border-top: 1px solid var(--line); }
+      .blk { margin-top: 14px; }
+      .blk-h { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-bottom: 7px; }
+      .muted { color: var(--muted); font-size: 13.5px; margin: 0; }
+      .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      .flow .arr { color: var(--faint); font-size: 13px; }
+      .metrics { display: flex; flex-wrap: wrap; gap: 8px; }
+      .metric { border: 1px solid var(--line); background: rgba(36, 74, 88, 0.4); border-radius: 9px; padding: 6px 11px; }
+      .metric .mv { font-weight: 700; font-size: 13px; }
+      .metric .ml { font-size: 10.5px; color: var(--faint); }
+      .mv.success { color: var(--yellow); }
+      .mv.info { color: var(--sky); }
+      .mv.neutral { color: var(--white); }
+      .steps { margin: 0; padding-left: 20px; }
+      .steps li { color: var(--muted); font-size: 13px; margin-bottom: 5px; }
+      .pv { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .pvcard { border: 1px solid var(--line); background: var(--surface); border-radius: 11px; padding: 12px; }
+      .pvcard .pvn { font-weight: 600; font-size: 12.5px; color: var(--hyper-soft); }
+      .pvcard .pvt { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+      pre.code { margin: 0; background: var(--midnight); border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.65; color: #d5e0e3; }
+
+      footer { border-top: 1px solid var(--line); margin-top: 24px; }
+      .foot { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding: 22px 0 40px; font-size: 12px; color: var(--faint); }
+
+      @media (max-width: 800px) {
+        h1 { font-size: 30px; }
+        .personas, .cols, .pv { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap bar">
+        <span class="brand" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="white" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" /><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" /></svg>
+        </span>
+        <div>
+          <div class="brand-title">Redis <span class="pill pill-yellow">Beyond Caching</span></div>
+          <div class="sub">Banking capability ecosystem</div>
+        </div>
+        <span class="spacer"></span>
+        <span class="src">Canvas export · Redis Beyond Caching Banking</span>
+      </div>
+    </header>
+
+    <div class="wrap">
+      <section class="hero">
+        <div class="kicker">Interactive ecosystem</div>
+        <h1>Redis — Beyond Caching for <span class="accent">Banking</span></h1>
+        <p class="lead">
+          One real-time data platform that grows from the cache banks already
+          trust into search, vectors / GenAI, live data integration, event
+          streaming and global resilience. Each pillar below expands into
+          banking use cases with the reference architecture, a live demo flow
+          and value for every stakeholder.
+        </p>
+      </section>
+
+      <section>
+        <div class="seclabel">Beyond-caching maturity</div>
+        <div class="maturity">
+          <div class="mstage"><div class="lvl">L0</div><div class="ttl">Cache-aside</div><div class="note">Where most banks are</div></div>
+          <div class="mstage"><div class="lvl">L1</div><div class="ttl">Multi-model</div><div class="note">Retire point solutions</div></div>
+          <div class="mstage"><div class="lvl">L2</div><div class="ttl">Real-time platform</div><div class="note">Streams + RDI</div></div>
+          <div class="mstage"><div class="lvl">L3</div><div class="ttl">AI-native</div><div class="note">Vector + feature store</div></div>
+          <div class="mstage"><div class="lvl">L4</div><div class="ttl">Globally resilient</div><div class="note">Active-Active + DR</div></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="seclabel">View as persona</div>
+        <div class="personas">
+          <div class="persona"><div class="pn">Solution Architect</div><div class="pb">Stack consolidation, reference architectures, integration patterns, TCO.</div></div>
+          <div class="persona"><div class="pn">Platform &amp; SRE</div><div class="pb">99.999% uptime, Active-Active, auto-failover, K8s/GitOps, predictable latency.</div></div>
+          <div class="persona"><div class="pn">Database</div><div class="pb">Durability, RDI sync with system of record, multi-model, compliance, cost.</div></div>
+          <div class="persona"><div class="pn">Developer</div><div class="pb">Sub-ms APIs, client libraries, RedisVL, less glue code, fast delivery.</div></div>
+        </div>
+        <div class="seclabel" style="margin-top: 20px">Value lens</div>
+        <div class="chips">
+          <span class="chip">Speed</span>
+          <span class="chip">Scale</span>
+          <span class="chip">Resilience</span>
+          <span class="chip">Cost / TCO</span>
+          <span class="chip">Risk &amp; Compliance</span>
+          <span class="chip">Innovation</span>
+        </div>
+      </section>
+
+      <section>
+        <div class="seclabel">The ecosystem · 7 pillars</div>
+        <h2>Pillars &amp; banking use cases</h2>
+
+        <!-- PILLAR 1 -->
+        <div class="pillar">
+          <div class="pillar-h"><h3>Caching++</h3><span class="tl">The familiar cache, supercharged</span></div>
+          <div class="callout">Start from what banks already trust, then add client-side caching and auto-tiering (Flex) to push more data in at lower cost.</div>
+          <div class="cols">
+            <div><div class="mini-label">Capabilities</div><div class="chips"><span class="chip cap">Client-side caching</span><span class="chip cap">Redis Flex (RAM+SSD)</span><span class="chip cap">TTL &amp; eviction</span><span class="chip cap">Atomic counters</span></div></div>
+            <div><div class="mini-label">Consolidates / replaces</div><div class="chips"><span class="chip">Memcached</span><span class="chip">Bespoke session stores</span></div></div>
+          </div>
+          <div class="ucs">
+            <details class="uc">
+              <summary><span class="uc-name">Distributed session &amp; token store</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Sticky sessions and JWT/OAuth token state must be shared across stateless app nodes and regions without hitting the core DB.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">App nodes</span><span class="arr">→</span><span class="chip">Redis (session:* / token:*)</span><span class="arr">→</span><span class="chip">TTL expiry</span><span class="arr">→</span><span class="chip">Active-Active (multi-region)</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">&lt;1 ms</div><div class="ml">Session lookup</div></div><div class="metric"><div class="mv neutral">0</div><div class="ml">DB hits for auth</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Developer</div><div class="pvt">Drop-in session layer, no DB round-trips.</div></div><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Stateless app tier; scale horizontally.</div></div></div></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">Hot reference data with Flex</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Large reference datasets (BIN ranges, IFSC/SWIFT, product catalogs) are read constantly but only partly hot.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Reference data load (RIOT)</span><span class="arr">→</span><span class="chip">Redis Flex: hot in RAM, warm on SSD</span><span class="arr">→</span><span class="chip">Sub-ms reads</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">~70%</div><div class="ml">Infra cost vs all-RAM</div></div><div class="metric"><div class="mv neutral">10k</div><div class="ml">ops/sec/core (Flex)</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Big datasets at a fraction of RAM cost.</div></div><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Same Redis API, no app changes.</div></div></div></div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- PILLAR 2 -->
+        <div class="pillar">
+          <div class="pillar-h"><h3>Multi-model data</h3><span class="tl">One engine: JSON, Search, Time Series</span></div>
+          <div class="callout">Query and index data inside Redis instead of bolting on a separate search engine or document store.</div>
+          <div class="cols">
+            <div><div class="mini-label">Capabilities</div><div class="chips"><span class="chip cap">JSON documents</span><span class="chip cap">Redis Query Engine (Search)</span><span class="chip cap">Time Series</span><span class="chip cap">Probabilistic (Bloom/CMS/Top-K)</span></div></div>
+            <div><div class="mini-label">Consolidates / replaces</div><div class="chips"><span class="chip">Elasticsearch</span><span class="chip">Separate document DB</span><span class="chip">Standalone metrics store</span></div></div>
+          </div>
+          <div class="ucs">
+            <details class="uc">
+              <summary><span class="uc-name">Customer 360 profile &amp; search</span><span class="pill pill-yellow">Flagship demo</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Relationship managers need a sub-second, unified customer view (accounts, products, KYC, interactions) with rich filtering, but data is scattered across systems and slow to join.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Profiles stored as JSON (cust:{id})</span><span class="arr">→</span><span class="chip">FT.CREATE secondary index on JSON fields</span><span class="arr">→</span><span class="chip">FT.SEARCH: full-text + tag + numeric filters</span><span class="arr">→</span><span class="chip">Sub-ms response to the RM app</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">&lt;5 ms</div><div class="ml">360 lookup (p99)</div></div><div class="metric"><div class="mv info">1</div><div class="ml">System (was 3+)</div></div><div class="metric"><div class="mv neutral">100k+</div><div class="ml">Profiles indexed</div></div></div></div>
+                <div class="blk"><div class="blk-h">Live demo flow</div><ol class="steps"><li>Load 100k synthetic customer JSON profiles (seeded with RIOT).</li><li>Create a search index over name, PAN (tag), segment, balance.</li><li>Live-search 'priority customers named Sharma with balance &gt; 1M' and return in &lt;5 ms.</li><li>Open Redis Insight to show the index and JSON docs updating.</li></ol></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Retire a separate search cluster; one platform for store + query.</div></div><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Secondary indexing and JSON without a second database to license.</div></div><div class="pvcard"><div class="pvn">Developer</div><div class="pvt">Query with FT.SEARCH; no ORM gymnastics or join services.</div></div></div></div>
+                <div class="blk"><div class="blk-h">Sample</div><pre class="code">FT.CREATE idx:cust ON JSON PREFIX 1 cust: SCHEMA \
+  $.name AS name TEXT $.pan AS pan TAG \
+  $.segment AS segment TAG $.balance AS balance NUMERIC
+
+FT.SEARCH idx:cust \
+  "@segment:{priority} @name:Sharma* @balance:[1000000 +inf]" \
+  DIALECT 2</pre></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">AML / sanctions screening</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Every transaction party must be screened against sanctions/PEP lists with fuzzy name matching, in real time, without slowing payments.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Watchlists indexed (Search + tags)</span><span class="arr">→</span><span class="chip">Fuzzy + phonetic name match</span><span class="arr">→</span><span class="chip">Vector similarity for aliases</span><span class="arr">→</span><span class="chip">Real-time decision</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">&lt;10 ms</div><div class="ml">Screening latency</div></div><div class="metric"><div class="mv neutral">24x7</div><div class="ml">Inline with payments</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Auditable, indexed watchlists in-platform.</div></div><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Screening as a low-latency service, not a batch job.</div></div></div></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">Real-time limits &amp; exposure</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Trading and card systems need rolling-window limit and exposure checks computed continuously, not end-of-day.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">TS.ADD per account/desk</span><span class="arr">→</span><span class="chip">TS.RANGE rolling windows</span><span class="arr">→</span><span class="chip">Atomic counters for limits</span><span class="arr">→</span><span class="chip">Block/allow decision</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">real-time</div><div class="ml">Limit checks</div></div><div class="metric"><div class="mv neutral">ms</div><div class="ml">Window aggregation</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Developer</div><div class="pvt">Time Series + counters replace custom windowing code.</div></div><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Predictable latency under burst load.</div></div></div></div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- PILLAR 3 -->
+        <div class="pillar">
+          <div class="pillar-h"><h3>Vector search &amp; GenAI</h3><span class="tl">AI-native banking, served at sub-ms</span></div>
+          <div class="callout">Redis is a vector database, an online feature store, and a semantic cache — the real-time backbone for fraud ML and GenAI.</div>
+          <div class="cols">
+            <div><div class="mini-label">Capabilities</div><div class="chips"><span class="chip cap">Vector search (HNSW/FLAT)</span><span class="chip cap">RedisVL</span><span class="chip cap">Semantic caching / LangCache</span><span class="chip cap">Hybrid search</span><span class="chip cap">Feature store</span></div></div>
+            <div><div class="mini-label">Consolidates / replaces</div><div class="chips"><span class="chip">Standalone vector DB</span><span class="chip">Separate online feature store</span></div></div>
+          </div>
+          <div class="ucs">
+            <details class="uc">
+              <summary><span class="uc-name">GenAI RM / support copilot (RAG)</span><span class="pill pill-yellow">Flagship demo</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Staff and customers ask natural-language questions over policies, products, and account context. LLM calls are slow and expensive, and answers must be grounded to avoid hallucination.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Embed bank docs → store vectors in Redis</span><span class="arr">→</span><span class="chip">RedisVL VectorQuery retrieves top-k context (RAG)</span><span class="arr">→</span><span class="chip">LLM answers grounded on retrieved context</span><span class="arr">→</span><span class="chip">LangCache semantically caches answers</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">~15x</div><div class="ml">Faster on cache hit</div></div><div class="metric"><div class="mv success">up to 70%</div><div class="ml">LLM cost saved</div></div><div class="metric"><div class="mv neutral">&lt;20 ms</div><div class="ml">Vector retrieval</div></div></div></div>
+                <div class="blk"><div class="blk-h">Live demo flow</div><ol class="steps"><li>Index synthetic policy/product docs as embeddings via RedisVL.</li><li>Ask 'What is the penalty for early FD withdrawal for NRE accounts?'</li><li>Show grounded answer + the retrieved source chunks.</li><li>Ask a paraphrase and show LangCache returning instantly with cost saved.</li></ol></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">One platform for vectors, cache, and session — fewer AI moving parts.</div></div><div class="pvcard"><div class="pvn">Developer</div><div class="pvt">RedisVL gives a clean Python API for RAG; ship in days.</div></div><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Grounding data and embeddings co-located and governed.</div></div></div></div>
+                <div class="blk"><div class="blk-h">Sample</div><pre class="code">from redisvl.index import SearchIndex
+from redisvl.query import VectorQuery
+
+q = VectorQuery(
+    vector=embed("early FD withdrawal penalty NRE"),
+    vector_field_name="embedding",
+    return_fields=["text", "source"],
+    num_results=5,
+)
+context = index.query(q)  # top-k grounded chunks, &lt;20ms</pre></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">Real-time fraud detection</span><span class="pill pill-yellow">Flagship demo</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Card/UPI fraud must be caught in the authorization window (tens of ms). Models need fresh features and similarity to known fraud patterns — too slow against a traditional DB.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Transactions ingested via Streams (XADD)</span><span class="arr">→</span><span class="chip">Time Series: velocity &amp; spend windows</span><span class="arr">→</span><span class="chip">Bloom/Cuckoo: seen-device / dedup checks</span><span class="arr">→</span><span class="chip">Vector similarity to known fraud vectors</span><span class="arr">→</span><span class="chip">Online feature lookup → model score (sub-ms)</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">&lt;30 ms</div><div class="ml">Decision in auth window</div></div><div class="metric"><div class="mv success">sub-ms</div><div class="ml">Feature lookup</div></div><div class="metric"><div class="mv info">5+</div><div class="ml">Capabilities, 1 engine</div></div></div></div>
+                <div class="blk"><div class="blk-h">Live demo flow</div><ol class="steps"><li>Stream synthetic card transactions through a consumer group.</li><li>Compute velocity (TS.RANGE) and check device with BF.EXISTS.</li><li>Run vector similarity vs. known fraud embeddings.</li><li>Flag a suspicious burst live and visualize in Redis Insight.</li></ol></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Fraud pipeline (stream + features + vectors) on one platform.</div></div><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Predictable low latency keeps auth SLAs safe.</div></div><div class="pvcard"><div class="pvn">Developer</div><div class="pvt">No stitching Kafka + a feature store + a vector DB.</div></div></div></div>
+                <div class="blk"><div class="blk-h">Sample</div><pre class="code">XADD txn:stream * card 4111... amt 9500 mcc 6011 geo IN
+
+# scoring consumer (per event)
+TS.RANGE spend:{card} - + AGGREGATION sum 3600000   # 1h velocity
+BF.EXISTS devices:{card} {deviceId}                  # known device?
+# + vector similarity vs known-fraud index -&gt; risk score</pre></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">Semantic caching (LangCache)</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Repeated, paraphrased LLM queries (support FAQs, policy lookups) re-incur full model cost and latency.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Embed query</span><span class="arr">→</span><span class="chip">Vector match against cached Q/A</span><span class="arr">→</span><span class="chip">Return cached answer on semantic hit</span><span class="arr">→</span><span class="chip">Bypass LLM</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">up to 70%</div><div class="ml">Cost reduction</div></div><div class="metric"><div class="mv success">10-15x</div><div class="ml">Latency win</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Developer</div><div class="pvt">A few lines to wrap any LLM call.</div></div><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Direct, measurable GenAI cost control.</div></div></div></div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- PILLAR 4 -->
+        <div class="pillar">
+          <div class="pillar-h"><h3>Data integration (RDI &amp; RIOT)</h3><span class="tl">Sync with the system of record, live</span></div>
+          <div class="callout">RDI streams change data from core banking systems into Redis in near real time; RIOT loads, migrates and replicates data. This is the bridge from caching to a real-time data layer.</div>
+          <div class="cols">
+            <div><div class="mini-label">Capabilities</div><div class="chips"><span class="chip cap">RDI (CDC pipelines)</span><span class="chip cap">RIOT import/export</span><span class="chip cap">Live replication</span><span class="chip cap">Write-behind / read-through</span></div></div>
+            <div><div class="mini-label">Consolidates / replaces</div><div class="chips"><span class="chip">Bespoke ETL / CDC scripts</span><span class="chip">Nightly batch sync jobs</span></div></div>
+          </div>
+          <div class="ucs">
+            <details class="uc">
+              <summary><span class="uc-name">Customer 360 via RDI (CDC)</span><span class="pill pill-yellow">Flagship demo</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">The core banking system (Oracle/Db2) is the source of truth but can't serve sub-ms, high-concurrency reads for digital channels. Teams resort to brittle nightly syncs that are stale by morning.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">RDI captures changes (CDC) from core banking DB</span><span class="arr">→</span><span class="chip">Transforms rows → Redis JSON / Hash</span><span class="arr">→</span><span class="chip">Redis serves digital channels at sub-ms</span><span class="arr">→</span><span class="chip">Source DB stays the system of record</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">&lt;1 s</div><div class="ml">Source → Redis sync</div></div><div class="metric"><div class="mv success">&lt;1 ms</div><div class="ml">Channel read latency</div></div><div class="metric"><div class="mv info">0</div><div class="ml">App changes needed</div></div></div></div>
+                <div class="blk"><div class="blk-h">Live demo flow</div><ol class="steps"><li>Run a containerized Postgres 'core banking' DB + RDI pipeline.</li><li>UPDATE a customer's address in Postgres.</li><li>Watch it appear in Redis JSON in under a second (no app change).</li><li>Query the 360 view from Redis at sub-ms while load runs.</li></ol></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Offload reads from the core; keep Oracle/Db2 authoritative.</div></div><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Event-driven sync pattern instead of fragile batch ETL.</div></div><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Protect the core from digital traffic spikes.</div></div></div></div>
+                <div class="blk"><div class="blk-h">Sample</div><pre class="code"># rdi pipeline (config.yaml)
+sources:
+  core-banking:
+    type: cdc            # Debezium-based change data capture
+    connection: oracle-core
+targets:
+  redis:
+    data-type: json      # land each row as a JSON document
+    key: "cust:{{ id }}"</pre></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">Write-behind to system of record</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Apps need fast writes but the core DB can't absorb peak write rates synchronously.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">App writes to Redis (fast)</span><span class="arr">→</span><span class="chip">RDI/streams buffer changes</span><span class="arr">→</span><span class="chip">Async write-behind to core DB</span><span class="arr">→</span><span class="chip">Eventual consistency</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">absorb</div><div class="ml">Peak write bursts</div></div><div class="metric"><div class="mv neutral">async</div><div class="ml">Core DB protected</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Classic write-behind pattern, productized.</div></div><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Smooths write load on the core.</div></div></div></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">Zero-downtime migration (RIOT)</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Banks need to move off ElastiCache / OSS Redis / Memorystore without an outage or risky big-bang cutover.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">RIOT replicate source → target</span><span class="arr">→</span><span class="chip">Live sync keeps target current</span><span class="arr">→</span><span class="chip">Validate</span><span class="arr">→</span><span class="chip">Cut over endpoint</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">live</div><div class="ml">Replication</div></div><div class="metric"><div class="mv neutral">minimal</div><div class="ml">Downtime</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Controlled, observable cutover.</div></div><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Verify data parity before switch.</div></div></div></div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- PILLAR 5 -->
+        <div class="pillar">
+          <div class="pillar-h"><h3>Streams &amp; events</h3><span class="tl">Real-time event backbone</span></div>
+          <div class="callout">Streams with consumer groups give exactly-once-style processing for payments and event-driven services — a lightweight alternative to a separate message bus.</div>
+          <div class="cols">
+            <div><div class="mini-label">Capabilities</div><div class="chips"><span class="chip cap">Streams + consumer groups</span><span class="chip cap">Pub/Sub</span><span class="chip cap">Atomic counters / idempotency</span><span class="chip cap">Keyspace notifications</span></div></div>
+            <div><div class="mini-label">Consolidates / replaces</div><div class="chips"><span class="chip">Kafka (for many in-app cases)</span><span class="chip">Custom queues</span></div></div>
+          </div>
+          <div class="ucs">
+            <details class="uc">
+              <summary><span class="uc-name">Instant payments processing</span><span class="pill pill-yellow">Flagship demo</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">UPI/IMPS/RTP demand high-throughput, idempotent, ordered processing with strict latency SLAs and no double-posting — even during spikes.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Payment events → Streams (XADD)</span><span class="arr">→</span><span class="chip">Consumer groups process in order, at-least-once</span><span class="arr">→</span><span class="chip">Idempotency key (SET NX) prevents double-post</span><span class="arr">→</span><span class="chip">Atomic balance update + ledger event</span><span class="arr">→</span><span class="chip">Active-Active for always-on across regions</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">100k+</div><div class="ml">Payments/sec</div></div><div class="metric"><div class="mv info">exactly once</div><div class="ml">Posting semantics</div></div><div class="metric"><div class="mv success">&lt;5 ms</div><div class="ml">Per-event latency</div></div></div></div>
+                <div class="blk"><div class="blk-h">Live demo flow</div><ol class="steps"><li>Fire a burst of synthetic UPI payments into a stream.</li><li>Consumer group posts each exactly once with idempotency keys.</li><li>Replay a duplicate and show it's safely ignored.</li><li>Show throughput and per-event latency live.</li></ol></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Event-driven payments without standing up Kafka.</div></div><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Consumer groups + Active-Active = resilient, always-on.</div></div><div class="pvcard"><div class="pvn">Developer</div><div class="pvt">Idempotency and ordering with primitives, not frameworks.</div></div></div></div>
+                <div class="blk"><div class="blk-h">Sample</div><pre class="code"># idempotent debit + ledger
+SET pay:{txnId} PENDING NX EX 60        # claim once
+INCRBYFLOAT acct:{id}:bal -9500
+XADD ledger * txnId {txnId} acct {id} amt -9500 status POSTED
+XACK payments grp {msgId}</pre></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">Real-time transaction alerts</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Customers expect instant debit/credit and fraud alerts the moment a transaction posts.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Posting event → Pub/Sub / Stream</span><span class="arr">→</span><span class="chip">Notification service subscribes</span><span class="arr">→</span><span class="chip">Push to app/SMS</span><span class="arr">→</span><span class="chip">Sub-second delivery</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">sub-second</div><div class="ml">Alert delivery</div></div><div class="metric"><div class="mv neutral">fan-out</div><div class="ml">Many subscribers</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Developer</div><div class="pvt">Pub/Sub fan-out with no extra infra.</div></div><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Event-driven by default.</div></div></div></div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- PILLAR 6 -->
+        <div class="pillar">
+          <div class="pillar-h"><h3>Global resilience</h3><span class="tl">Always-on, multi-region, K8s-native</span></div>
+          <div class="callout">Active-Active geo-distribution, automatic failover, and the Kubernetes operator deliver banking-grade availability and data residency.</div>
+          <div class="cols">
+            <div><div class="mini-label">Capabilities</div><div class="chips"><span class="chip cap">Active-Active (CRDT)</span><span class="chip cap">Auto-failover + replica HA</span><span class="chip cap">K8s operator + GitOps</span><span class="chip cap">Rolling upgrades</span><span class="chip cap">Rack-zone awareness</span></div></div>
+            <div><div class="mini-label">Consolidates / replaces</div><div class="chips"><span class="chip">Complex DIY multi-region setups</span><span class="chip">Manual failover runbooks</span></div></div>
+          </div>
+          <div class="ucs">
+            <details class="uc">
+              <summary><span class="uc-name">Always-on multi-region banking</span><span class="pill pill-yellow">Flagship demo</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Digital banking must stay up during a regional outage and serve users from the nearest geography with local latency — while staying consistent.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Active-Active database spans regions (e.g. Mumbai + Singapore)</span><span class="arr">→</span><span class="chip">Multi-primary: write to any region</span><span class="arr">→</span><span class="chip">CRDTs auto-resolve conflicts</span><span class="arr">→</span><span class="chip">Region failure → traffic shifts, no data loss</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">99.999%</div><div class="ml">Uptime SLA</div></div><div class="metric"><div class="mv success">&lt;1 ms</div><div class="ml">Local region latency</div></div><div class="metric"><div class="mv info">0</div><div class="ml">Manual failover steps</div></div></div></div>
+                <div class="blk"><div class="blk-h">Live demo flow</div><ol class="steps"><li>Create an Active-Active DB across two clusters.</li><li>Write to both regions concurrently.</li><li>Show CRDT conflict resolution converging.</li><li>Kill a region; app keeps serving from the other.</li></ol></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Automatic geo-failover; no 2 a.m. runbook.</div></div><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Active-Active reference architecture out of the box.</div></div><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Strong eventual consistency with conflict-free types.</div></div></div></div>
+                <div class="blk"><div class="blk-h">Sample</div><pre class="code">crdb-cli crdb create --name payments --memory-size 10gb \
+  --instance fqdn=cluster-mumbai.bank.internal \
+  --instance fqdn=cluster-singapore.bank.internal</pre></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">Kubernetes-native operations</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Platform teams want Redis managed declaratively with GitOps, not click-ops.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Redis Enterprise operator</span><span class="arr">→</span><span class="chip">CRDs: REC / REDB</span><span class="arr">→</span><span class="chip">GitOps reconcile</span><span class="arr">→</span><span class="chip">Rolling upgrades</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">declarative</div><div class="ml">GitOps managed</div></div><div class="metric"><div class="mv neutral">0-downtime</div><div class="ml">Upgrades</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Self-healing, declarative clusters.</div></div><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Fits CNCF-conformant platforms.</div></div></div></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">DR &amp; data residency</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Regulators require in-country data and tested disaster recovery with clear RTO/RPO.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">Geo-placement of clusters</span><span class="arr">→</span><span class="chip">Backups + cluster recovery</span><span class="arr">→</span><span class="chip">Active-Active DR</span><span class="arr">→</span><span class="chip">Rack-zone awareness</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">RTO/RPO</div><div class="ml">Met with AA</div></div><div class="metric"><div class="mv neutral">in-region</div><div class="ml">Data residency</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Backups, recovery and residency controls.</div></div><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Tested DR, not hope-based.</div></div></div></div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <!-- PILLAR 7 -->
+        <div class="pillar">
+          <div class="pillar-h"><h3>Enterprise &amp; security</h3><span class="tl">Compliance-ready by design</span></div>
+          <div class="callout">RBAC, LDAP, encryption, and audit make Redis fit banking compliance (RBI, PCI-DSS, GDPR), backed by deep observability and 24/7 support.</div>
+          <div class="cols">
+            <div><div class="mini-label">Capabilities</div><div class="chips"><span class="chip cap">RBAC + users/roles</span><span class="chip cap">LDAP + SSO/SAML + MFA</span><span class="chip cap">TLS + internode + at-rest encryption</span><span class="chip cap">Audit events</span><span class="chip cap">Prometheus/Grafana</span></div></div>
+            <div><div class="mini-label">Consolidates / replaces</div><div class="chips"><span class="chip">Ad-hoc access scripts</span><span class="chip">Blind-spot monitoring</span></div></div>
+          </div>
+          <div class="ucs">
+            <details class="uc">
+              <summary><span class="uc-name">Compliance &amp; audit (RBI / PCI / GDPR)</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Every access and change to sensitive data must be controlled, encrypted, and auditable for regulators.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">RBAC roles per app/team</span><span class="arr">→</span><span class="chip">Encryption in transit + at rest</span><span class="arr">→</span><span class="chip">Audit events captured</span><span class="arr">→</span><span class="chip">Mapped to controls</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">end-to-end</div><div class="ml">Encryption</div></div><div class="metric"><div class="mv neutral">auditable</div><div class="ml">Access events</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Demonstrable controls for audits.</div></div><div class="pvcard"><div class="pvn">Solution Architect</div><div class="pvt">Compliance mapped to capabilities.</div></div></div></div>
+              </div>
+            </details>
+            <details class="uc">
+              <summary><span class="uc-name">RBAC + LDAP + encryption</span><span class="uc-caret">▸</span></summary>
+              <div class="uc-body">
+                <div class="blk"><div class="blk-h">Business problem</div><p class="muted">Access must integrate with enterprise identity and enforce least privilege.</p></div>
+                <div class="blk"><div class="blk-h">Reference architecture</div><div class="flow"><span class="chip">LDAP / SSO integration</span><span class="arr">→</span><span class="chip">Fine-grained RBAC</span><span class="arr">→</span><span class="chip">Per-database ACLs</span><span class="arr">→</span><span class="chip">TLS everywhere</span></div></div>
+                <div class="blk"><div class="blk-h">Impact</div><div class="metrics"><div class="metric"><div class="mv success">least-priv</div><div class="ml">Access model</div></div><div class="metric"><div class="mv neutral">SSO</div><div class="ml">Identity integrated</div></div></div></div>
+                <div class="blk"><div class="blk-h">Value by stakeholder</div><div class="pv"><div class="pvcard"><div class="pvn">Platform &amp; SRE</div><div class="pvt">Central identity, fewer secrets.</div></div><div class="pvcard"><div class="pvn">Database</div><div class="pvt">Granular, role-based data access.</div></div></div></div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>
+      <div class="wrap foot">
+        <span>Redis — Beyond Caching for Banking · faithful export of the Cursor canvas · synthetic, illustrative data</span>
+        <a href="https://redis.io/docs/latest/" target="_blank" rel="noreferrer">redis.io/docs</a>
+      </div>
+    </footer>
+  </body>
+</html>
