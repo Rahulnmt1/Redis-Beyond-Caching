@@ -139,4 +139,5 @@ target/
 # project-specific
 /backups/
 /dev.log
+/backups/
 # <<< demo-sync managed block <<<
