@@ -76,6 +76,18 @@ export const CAPABILITIES: CapabilityBlock[] = [
     rich: true,
   },
   {
+    id: "redis-for-ai",
+    name: "Redis for AI",
+    icon: "redis-for-ai",
+    whatItIs:
+      "The real-time context engine for GenAI & agents — vector database, semantic cache, agent memory, governed retrieval, RAG and a feature store, unified by Redis Iris.",
+    workloads: ["AI assistants & agents", "RAG & semantic search", "Fraud / scam similarity", "Real-time ML features"],
+    capabilities: ["Vector DB · HNSW / VSS", "LangCache · Agent Memory", "Context Retriever · RDI", "RAG · Semantic routing"],
+    personas: ["Dev", "SA", "DB", "SRE"],
+    lenses: ["innovation", "speed", "cost"],
+    rich: true,
+  },
+  {
     id: "vector",
     name: "Vector",
     icon: "redis-vector-database",

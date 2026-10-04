@@ -30,14 +30,22 @@ function FlowRow({ steps }: { steps: ModuleSpec["how"]["flow"] }) {
   );
 }
 
-export function ModuleDeepDive({ spec, onBack }: { spec: ModuleSpec; onBack: () => void }) {
+export function ModuleDeepDive({
+  spec,
+  onBack,
+  backLabel = "Specialized modules",
+}: {
+  spec: ModuleSpec;
+  onBack: () => void;
+  backLabel?: string;
+}) {
   const { meta, useCases, how, features, personaValue, demo } = spec;
   const personaIds = Object.keys(personaValue) as PersonaId[];
 
   return (
     <div className="animate-fade-up space-y-9">
       <button onClick={onBack} className="btn btn-ghost !px-3 !py-1.5 text-xs">
-        <ArrowLeft className="h-4 w-4" /> Specialized modules
+        <ArrowLeft className="h-4 w-4" /> {backLabel}
       </button>
 
       {/* header */}
@@ -247,7 +255,7 @@ export function ModuleDeepDive({ spec, onBack }: { spec: ModuleSpec; onBack: () 
 
       <div className="flex flex-wrap items-center gap-3 border-t border-line pt-5">
         <button onClick={onBack} className="btn btn-ghost">
-          Back to Specialized modules
+          Back to {backLabel}
         </button>
         <span className="text-xs text-faint">
           Concept walkthrough · synthetic banking data · no real PII

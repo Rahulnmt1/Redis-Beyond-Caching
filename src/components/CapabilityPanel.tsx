@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, Hammer } from "lucide-react";
 import type { CapabilityBlock } from "@/data/capabilities";
 import { PillarIcon } from "./icons";
 import { DataStructuresHub } from "./DataStructuresHub";
+import { RedisForAiHub } from "./RedisForAiHub";
 import { SearchDeepDive } from "./SearchDeepDive";
 import { ChipRow, SectionLabel } from "./ui";
 
@@ -20,6 +21,10 @@ export function CapabilityPanel({
 
   if (cap.rich && cap.id === "data-structures") {
     return <DataStructuresHub onBack={onBack} />;
+  }
+
+  if (cap.rich && cap.id === "redis-for-ai") {
+    return <RedisForAiHub onBack={onBack} />;
   }
 
   return (

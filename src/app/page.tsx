@@ -114,6 +114,43 @@ function FeaturedSearchTile({ onOpen }: { onOpen: () => void }) {
   );
 }
 
+// L0 entry — Redis for AI, the context engine, presented as a full-width tile.
+function RedisForAiTile({ onOpen }: { onOpen: () => void }) {
+  return (
+    <button
+      onClick={onOpen}
+      className="tile tile-hover group relative flex w-full flex-col gap-5 p-6 text-left sm:flex-row sm:items-center"
+    >
+      <span className="flex h-16 w-16 flex-none items-center justify-center rounded-2xl border border-redis/30 bg-redis/10 text-redis">
+        <PillarIcon name="redis-for-ai" className="h-10 w-10" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-lg font-bold tracking-tight text-fg">Redis for AI</div>
+        <p className="mt-1 max-w-2xl text-[13px] leading-snug text-muted">
+          The real-time context engine for GenAI &amp; agents — Redis Iris (LangCache, Agent Memory,
+          Context Retriever, Data Integration) plus vector database, RAG, routing and a feature store.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <span className="rounded-md border border-redis/30 bg-redis/10 px-2 py-0.5 text-[10.5px] font-semibold text-redis-soft">
+            Iris · 4 services
+          </span>
+          <span className="rounded-md border border-redis/30 bg-redis/10 px-2 py-0.5 text-[10.5px] font-semibold text-redis-soft">
+            Foundations · 5
+          </span>
+          {["Vector DB", "Agent Memory", "Context Retriever", "RAG"].map((w) => (
+            <span key={w} className="rounded-md border border-line2 bg-surface2/70 px-2 py-0.5 text-[10.5px] font-medium text-muted">
+              {w}
+            </span>
+          ))}
+        </div>
+      </div>
+      <span className="inline-flex flex-none items-center gap-1 self-end text-[11px] font-semibold text-faint transition-colors group-hover:text-redis-soft sm:self-center">
+        Open <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+      </span>
+    </button>
+  );
+}
+
 export default function Page() {
   const [capId, setCapId] = useState<string | null>(null);
   const [persona, setPersona] = useState<PersonaId | "all">("all");
@@ -257,10 +294,16 @@ export default function Page() {
                 <FeaturedSearchTile onOpen={() => setCapId("search")} />
               </div>
 
+              <div className="space-y-3 pt-1">
+                <div className="label text-faint">AI &amp; agents · Redis Iris context engine</div>
+                <RedisForAiTile onOpen={() => setCapId("redis-for-ai")} />
+              </div>
+
               <p className="pt-1 text-center text-xs text-faint">
-                <span className="font-semibold text-muted">Data structures</span> and{" "}
-                <span className="font-semibold text-muted">Search &amp; query</span> are
-                fully built out — the specialized modules inside the hub are detailed next.
+                <span className="font-semibold text-muted">Data structures</span>,{" "}
+                <span className="font-semibold text-muted">Search &amp; query</span> and{" "}
+                <span className="font-semibold text-muted">Redis for AI</span> are
+                fully built out — open a hub to drill into its capabilities.
               </p>
             </section>
 
