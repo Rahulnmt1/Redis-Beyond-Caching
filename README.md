@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/shri-radha.png" alt="श्री राधा" width="200">
+</p>
+
 # Redis Beyond Caching — Banking Showcase
 
 Interactive Next.js showcase of Redis beyond caching for banking: a data-structures hub and module deep dives (Search, JSON, TimeSeries, Probabilistic, Vector Sets and more) running live against Redis Software 8.
